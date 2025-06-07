@@ -1,0 +1,50 @@
+[build]
+  command = "npm install" # Команда для установки зависимостей
+  publish = "public"      # Папка со статическими файлами (фронтенд)
+  functions = "netlify/functions" # Папка с твоими серверными функциями
+
+# Перенаправляем API запросы на соответствующие функции
+[[redirects]]
+  from = "/admin/login"
+  to = "/.netlify/functions/auth"
+  status = 200 # Для POST
+  force = true
+
+[[redirects]]
+  from = "/admin/logout"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/auth-check"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/news" # Общий GET для всех новостей
+  to = "/.netlify/functions/news"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/news/:id" # GET одной новости, PUT, DELETE
+  to = "/.netlify/functions/news-admin" # Используем news-admin для операций записи
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/news/:id/react" # POST для реакций
+  to = "/.netlify/functions/news" # Можно и в news.js, если там будет обработка POST
+  status = 200
+  force = true
+
+# Важно: Netlify Functions не поддерживают сессии Express "из коробки" так, как это делает
+# полноценный сервер. Для аутентификации в serverless окружении обычно используют JWT (JSON Web Tokens)
+# или другие stateless методы. Переделка на JWT выходит за рамки "быстрой адаптации".
+# Пока что isAdmin middleware не будет работать корректно без доработок для stateless auth.
+# Для упрощения, мы пока можем убрать isAdmin из функций news-admin.js,
+# но это НЕБЕЗОПАСНО для реального приложения.
+# В идеале, /admin/login должен возвращать токен, который потом передается
+# в заголовках для админских операций.
