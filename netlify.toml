@@ -1,48 +1,15 @@
-# Финальная, самая надежная конфигурация для Netlify
+# Финальная, самая надежная конфигурация v2
 
 [build]
-  # Команда, которую Netlify выполнит перед сборкой.
-  # Она установит все зависимости (express, jwt и т.д.) для ваших функций.
-  command = "npm install"
-  
-  # Папка, которую нужно опубликовать как статический сайт.
-  publish = "public" 
-  
-  # Папка, где лежат ваши бессерверные функции.
-  functions = "netlify/functions"
-
-# Настройки для локальной разработки
-[dev]
+  # Команда сборки для корневого проекта нам больше не нужна.
+  # publish и functions остаются прежними.
   publish = "public"
   functions = "netlify/functions"
-  port = 3000
 
-# Перенаправления (остаются без изменений)
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/news/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/admin-api/*"
-  to = "/.netlify/functions/news-admin/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/admin/login"
-  to = "/.netlify/functions/auth"
-  status = 200
-  force = true
-  conditions = { "method" = ["POST"] }
-
-[[redirects]]
-  from = "/admin/logout"
-  to = "/.netlify/functions/auth"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/admin/auth-check"
-  to = "/.netlify/functions/auth"
-  status = 200
-  force = true
+# Эта новая секция - ключ к решению!
+# Она говорит Netlify, что для папки с функциями нужно выполнить установку зависимостей.
+[functions]
+  # Эта строка указывает, что Netlify должен найти package.json внутри папки
+  # netlify/functions и установить зависимости из него.
+  node_bundler = "esbuild"
+  external_node_modules = ["express", "jsonwebtoken", "serverless-http", "@netlify/blobs"]

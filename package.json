@@ -4,14 +4,7 @@
   "description": "Backend for Socialism 2.0 website",
   "main": "index.js",
   "scripts": {
-    "start": "netlify dev",
-    "build": "npm install"
-  },
-  "dependencies": {
-    "@netlify/blobs": "^7.4.0",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "serverless-http": "^3.2.0"
+    "start": "netlify dev"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
