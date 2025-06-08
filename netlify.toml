@@ -1,15 +1,39 @@
-# Финальная, самая надежная конфигурация v2
+# Финальная рабочая конфигурация
 
 [build]
-  # Команда сборки для корневого проекта нам больше не нужна.
-  # publish и functions остаются прежними.
-  publish = "public"
+  # Эта команда установит все зависимости для функций
+  command = "cd netlify/functions && npm install"
+  
+  # Папка, которую нужно опубликовать
+  publish = "public" 
+  
+  # Папка, где лежат функции
   functions = "netlify/functions"
 
-# Эта новая секция - ключ к решению!
-# Она говорит Netlify, что для папки с функциями нужно выполнить установку зависимостей.
-[functions]
-  # Эта строка указывает, что Netlify должен найти package.json внутри папки
-  # netlify/functions и установить зависимости из него.
-  node_bundler = "esbuild"
-  external_node_modules = ["express", "jsonwebtoken", "serverless-http", "@netlify/blobs"]
+# Правила перенаправления для API
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/news/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/admin-api/*"
+  to = "/.netlify/functions/news-admin/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/admin/login"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
+  conditions = { "method" = ["POST"] }
+[[redirects]]
+from = "/admin/logout"
+to = "/.netlify/functions/auth"
+status = 200
+force = true
+[[redirects]]
+from = "/admin/auth-check"
+to = "/.netlify/functions/auth"
+status = 200
+force = true
