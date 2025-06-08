@@ -1,83 +1,47 @@
 // netlify/functions/_utils.js
-const fs = require('fs').promises;
-const path = require('path');
+const { getStore } = require('@netlify/blobs');
 
-// В Netlify Functions, __dirname будет указывать на папку с функцией.
-// Нам нужно подняться на уровень выше, чтобы найти папку data.
-// Это НЕ очень надежно, так как структура сборки может меняться.
-// Лучше использовать process.env.LAMBDA_TASK_ROOT (для AWS Lambda, на которой Netlify Functions работают)
-// и от него строить путь.
-// Для локальной разработки `netlify dev` это может работать иначе.
-// Более надежный способ - использовать Vercel Blob или базу данных.
-
-// Определяем путь к data относительно корня проекта
-// process.cwd() в Netlify Functions указывает на корень проекта во время выполнения
-const DATA_DIR = path.join(process.cwd(), 'data');
-const NEWS_FILE_PATH = path.join(DATA_DIR, 'news.json');
-
-
-async function ensureDataDirExists() {
-    try {
-        await fs.mkdir(DATA_DIR, { recursive: true });
-    } catch (error) {
-        if (error.code !== 'EEXIST') {
-            console.error("Критическая ошибка: не удалось создать директорию data.", error);
-            throw error;
-        }
-    }
-}
+// Название хранилища. Может быть любым.
+const NEWS_STORE_NAME = 'news_data';
+// Ключ, под которым будут храниться все новости в хранилище.
+const NEWS_BLOB_KEY = 'all_news';
 
 async function getNews() {
-    // ВАЖНО: Файловая система в Netlify Functions эфемерна для записи!
-    // Чтение из файла, который был задеплоен, возможно.
-    // Запись в файл будет работать только на время жизни инстанса функции и не сохранится.
-    await ensureDataDirExists(); // Попытаемся создать, если нет
     try {
-        const data = await fs.readFile(NEWS_FILE_PATH, 'utf-8');
-        const jsonData = JSON.parse(data);
-        if (!Array.isArray(jsonData)) {
-            console.warn(`Файл ${NEWS_FILE_PATH} не содержал массив. Инициализация пустым массивом.`);
-            // Запись здесь не будет иметь долгосрочного эффекта в проде
-            // await saveNews([]);
-            return []; // Возвращаем пустой, если структура неверна
-        }
-        return jsonData;
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            // await saveNews([]); // Запись здесь не будет иметь долгосрочного эффекта
-            return []; // Возвращаем пустой, если файла нет
-        }
-        if (error instanceof SyntaxError) {
-            console.error(`Ошибка парсинга ${NEWS_FILE_PATH}. Файл может быть поврежден. Возвращаем пустой массив.`, error);
-            // await saveNews([]);
+        const store = getStore(NEWS_STORE_NAME);
+        const data = await store.get(NEWS_BLOB_KEY, { type: 'json' });
+        
+        // Если данных еще нет, вернем пустой массив
+        if (!data) {
+            console.log("Blob is empty, returning [].");
             return [];
         }
-        console.error("Ошибка чтения файла новостей:", error);
-        // В случае серьезной ошибки, лучше вернуть пустой массив, чем падать
+        
+        // Убедимся, что это массив
+        if (!Array.isArray(data)) {
+            console.warn(`Data in blob '${NEWS_BLOB_KEY}' was not an array. Initializing with [].`);
+            await saveNews([]);
+            return [];
+        }
+        
+        return data;
+    } catch (error) {
+        console.error("Error reading from Netlify Blob Storage:", error);
+        // В случае ошибки возвращаем пустой массив, чтобы сайт не упал
         return [];
-        // throw error; // Можно пробросить, но это уронит функцию
     }
 }
 
 async function saveNews(news) {
-    // ВАЖНО: Эта функция НЕ БУДЕТ надежно сохранять данные в Netlify Functions!
-    // Любые изменения будут потеряны.
-    console.warn("Вызов saveNews в Netlify Function. Изменения в news.json не будут постоянными!");
-    await ensureDataDirExists();
     try {
-        await fs.writeFile(NEWS_FILE_PATH, JSON.stringify(news, null, 2), 'utf-8');
+        const store = getStore(NEWS_STORE_NAME);
+        // Сохраняем весь массив новостей целиком
+        await store.setJSON(NEWS_BLOB_KEY, news);
+        console.log(`Successfully saved news to blob '${NEWS_BLOB_KEY}'.`);
     } catch (error) {
-        console.error("Ошибка записи файла новостей (изменения не сохранятся в проде):", error);
-        // throw error; // Не пробрасываем, чтобы не уронить функцию из-за временной записи
+        console.error("Error writing to Netlify Blob Storage:", error);
+        throw error; // Пробрасываем ошибку, чтобы вызывающая функция знала о проблеме
     }
 }
 
-// Middleware для проверки isAdmin (пока не используется из-за проблем с сессиями)
-// function isAdmin(req, res, next) {
-//     if (req.session && req.session.isAdmin) {
-//         return next();
-//     }
-//     res.status(401).json({ success: false, message: 'Не авторизован' });
-// }
-
-module.exports = { getNews, saveNews /*, isAdmin */ };
+module.exports = { getNews, saveNews };
