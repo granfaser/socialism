@@ -2,11 +2,7 @@
   "name": "socialism-2.0-backend",
   "version": "1.0.0",
   "description": "Backend for Socialism 2.0 website",
-  "main": "index.js",
   "scripts": {
     "start": "netlify dev"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
   }
 }

@@ -27,13 +27,15 @@
   status = 200
   force = true
   conditions = { "method" = ["POST"] }
+
 [[redirects]]
-from = "/admin/logout"
-to = "/.netlify/functions/auth"
-status = 200
-force = true
+  from = "/admin/logout"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
+
 [[redirects]]
-from = "/admin/auth-check"
-to = "/.netlify/functions/auth"
-status = 200
-force = true
+  from = "/admin/auth-check"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
